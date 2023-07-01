@@ -2,8 +2,10 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -27,6 +29,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -99,6 +102,102 @@ public class Image_List_Fragment extends Fragment {
 
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+
+        inflater.inflate(R.menu.menu_images, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.images_delete){
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            builder.setTitle("Delete Images")
+                    .setMessage("Are you sure you want to delete all/selected images?")
+                    .setPositiveButton("Delete All", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            deleteImages(true);
+
+                        }
+                    })
+                    .setNeutralButton("Delete selected ", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            deleteImages(false);
+
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+
+                        }
+                    })
+                    .show();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void deleteImages(boolean deleteAll){
+
+        ArrayList<ModelImage> imagesToDeleteList = new ArrayList<>();
+        if (deleteAll){
+
+            imagesToDeleteList = allImageArrayList;
+
+        }
+        else{
+
+            for(int i = 0; i<allImageArrayList.size(); i++){
+
+                if (allImageArrayList.get(i).isChecked()) {
+
+                    imagesToDeleteList.add(allImageArrayList.get(i));
+                }
+
+            }
+
+        }
+
+        for ( int i=0; i <imagesToDeleteList.size(); i++){
+
+            try{
+
+                String pathOfImageToDelete = imagesToDeleteList.get(i).getImageUri().getPath();
+
+                File file = new File(pathOfImageToDelete);
+
+                if (file.exists()){
+
+                    boolean isDeleted = file.delete();
+                    Log.d(TAG, "deleteImages: isDeleted: "+isDeleted);
+                }
+
+            }
+            catch (Exception e){
+                Log.d(TAG, "deleteImages: ", e);
+
+            }
+        }
+        Toast.makeText(mContext, "Deleted" , Toast.LENGTH_SHORT).show();
+        loadImages();
+
+    }
+
     private void loadImages(){
         Log.d(TAG, "loadImages: ");
 
@@ -121,7 +220,7 @@ public class Image_List_Fragment extends Fragment {
 
                     Uri imageUri= Uri.fromFile(file);
 
-                    ModelImage modelImage = new ModelImage(imageUri);
+                    ModelImage modelImage = new ModelImage(imageUri, false);
 
                     allImageArrayList.add(modelImage);
                     adapterImage.notifyItemInserted(allImageArrayList.size());
@@ -262,7 +361,7 @@ public class Image_List_Fragment extends Fragment {
                         saveImageToAppLevelDirectory(imageUri);
 
 
-                        ModelImage modelImage = new ModelImage(imageUri);
+                        ModelImage modelImage = new ModelImage(imageUri, false);
                         allImageArrayList.add(modelImage);
                         adapterImage.notifyItemInserted(allImageArrayList.size());
 
@@ -304,7 +403,7 @@ public class Image_List_Fragment extends Fragment {
 
                         saveImageToAppLevelDirectory(imageUri);
 
-                        ModelImage modelImage = new ModelImage(imageUri);
+                        ModelImage modelImage = new ModelImage(imageUri, false);
                         allImageArrayList.add(modelImage);
                         adapterImage.notifyItemInserted(allImageArrayList.size());
 
