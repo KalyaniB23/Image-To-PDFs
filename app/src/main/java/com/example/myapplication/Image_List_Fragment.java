@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.provider.MediaStore;
 import android.util.Log;
@@ -36,6 +37,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 public class Image_List_Fragment extends Fragment {
 
@@ -50,6 +52,11 @@ public class Image_List_Fragment extends Fragment {
     private Uri imageUri = null;
     private Context mContext;
     private FloatingActionButton addImageF;
+
+    private RecyclerView imageRv;
+
+    private ArrayList<ModelImage> allImageArrayList;
+    private AdapterImage adapterImage;
 
     public Image_List_Fragment() {
         // Required empty public constructor
@@ -77,6 +84,9 @@ public class Image_List_Fragment extends Fragment {
         storagePermission = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
         addImageF = view.findViewById(R.id.addImageF);
+        imageRv = view.findViewById(R.id.imageRv);
+
+        loadImages();
 
         addImageF.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,6 +96,47 @@ public class Image_List_Fragment extends Fragment {
 
             }
         });
+
+    }
+
+    private void loadImages(){
+        Log.d(TAG, "loadImages: ");
+
+        allImageArrayList = new ArrayList<>();
+        adapterImage = new AdapterImage(mContext, allImageArrayList);
+
+        imageRv.setAdapter(adapterImage);
+
+        File folder = new File(mContext.getExternalFilesDir(null), Constants.IMAGES_FOLDER);
+
+        if (folder.exists()){
+            Log.d(TAG, "loadImages: folder exists");
+
+            File[] files = folder.listFiles();
+
+            if (files != null){
+                Log.d(TAG, "loadImages: Folder exists and have images");
+
+                for (File file: files){
+
+                    Uri imageUri= Uri.fromFile(file);
+
+                    ModelImage modelImage = new ModelImage(imageUri);
+
+                    allImageArrayList.add(modelImage);
+                    adapterImage.notifyItemInserted(allImageArrayList.size());
+                }
+
+
+            }
+            else{
+                Log.d(TAG, "loadImages: Folder exist but empty");
+            }
+
+        }
+        else{
+            Log.d(TAG, "loadImages: folder doesn't exists");
+        }
 
     }
 
@@ -210,6 +261,12 @@ public class Image_List_Fragment extends Fragment {
 
                         saveImageToAppLevelDirectory(imageUri);
 
+
+                        ModelImage modelImage = new ModelImage(imageUri);
+                        allImageArrayList.add(modelImage);
+                        adapterImage.notifyItemInserted(allImageArrayList.size());
+
+
                     }
                     else{
                         Toast.makeText(mContext, "Cancelled" , Toast.LENGTH_SHORT).show();
@@ -246,6 +303,10 @@ public class Image_List_Fragment extends Fragment {
                         Log.d(TAG, "onActivityResult: Picked image camera "+imageUri);
 
                         saveImageToAppLevelDirectory(imageUri);
+
+                        ModelImage modelImage = new ModelImage(imageUri);
+                        allImageArrayList.add(modelImage);
+                        adapterImage.notifyItemInserted(allImageArrayList.size());
 
                     }
                     else{
